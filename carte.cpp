@@ -10,20 +10,20 @@ using namespace std;
 void Bille::collision(Bille& autre) {
 	//coordonnées sphériques.
 	double r;
-	if (this->m_type == autre.m_type)
-		r = 2 * this->m_r;
+	if (m_type == autre.m_type)
+		r = 2 * m_r;
 	else
-		r = abs(this->m_r - autre.m_r);
+		r = abs(m_r - autre.m_r);
 	double e[3] = { 0,0,0 };
 	for (int i(0); i < 3; ++i) 
-		e[i] = (this->m_x[i] - autre.m_x[i]) / r; //le vecteur de norme 1 reliant les centres des billes
+		e[i] = (m_x[i] - autre.m_x[i]) / r; //le vecteur de norme 1 reliant les centres des billes
 
-	double m = ((this->m_v[0] - autre.m_v[0]) * e[0] + (this->m_v[1] - autre.m_v[1]) * e[1] + (this->m_v[2] - autre.m_v[2]) * e[2]); //la vitesse relative entre les centres
+	double m = ((m_v[0] - autre.m_v[0]) * e[0] + (m_v[1] - autre.m_v[1]) * e[1] + (m_v[2] - autre.m_v[2]) * e[2]); //la vitesse relative entre les centres
 	double vPar[3] = { m * e[0],m * e[1],m * e[2] }; //la vitesse parallèle
 	//double vOrth[3] = { (m_v[0] - autre.m_v[0]) - vPar[0],(m_v[1] - autre.m_v[1]) - vPar[1] ,(m_v[2] - autre.m_v[2]) - vPar[2] };//la vitesse orthogonale : se conserve !
 	for (int i(0); i < 3; ++i) {
-		this->m_v[i] -= vPar[i]*(2* autre.m_m /(this->m_m + autre.m_m));
-		autre.m_v[i] += + vPar[i]*2*this->m_m/(this->m_m+autre.m_m);
+		m_v[i] -= vPar[i]*(2* autre.m_m /(m_m + autre.m_m));
+		autre.m_v[i] += + vPar[i]*2*m_m/(m_m+autre.m_m);
 	}
 	return;
 }
@@ -34,20 +34,20 @@ double carre(double nombre) {
 }
 
 double Bille::v2(Bille& autre) {
-	return carre(this->m_v[0] - autre.m_v[0]) + carre(this->m_v[1] - autre.m_v[1]) + carre(this->m_v[2] - autre.m_v[2]);
+	return carre(m_v[0] - autre.m_v[0]) + carre(m_v[1] - autre.m_v[1]) + carre(m_v[2] - autre.m_v[2]);
 }
 
 
 
 double Bille::calculerTempsBille(Bille& autre, double d) {
 	double r2 = 0;
-	if (this->m_type == autre.m_type)
+	if (m_type == autre.m_type)
 		r2 = carre((m_r + autre.m_r + d) );
 	else
-		r2 = carre(abs(this->m_r - autre.m_r) - d);
+		r2 = carre(abs(m_r - autre.m_r) - d);
 
-	double x[3] = { this->m_x[0] - autre.m_x[0], this->m_x[1] - autre.m_x[1], this->m_x[2] - autre.m_x[2] };
-	double v[3] = { this->m_v[0] - autre.m_v[0] , this->m_v[1] - autre.m_v[1] , this->m_v[2] - autre.m_v[2] };
+	double x[3] = { m_x[0] - autre.m_x[0], m_x[1] - autre.m_x[1], m_x[2] - autre.m_x[2] };
+	double v[3] = { m_v[0] - autre.m_v[0] , m_v[1] - autre.m_v[1] , m_v[2] - autre.m_v[2] };
 	double delta = carre(x[0] * v[0] + x[1] * v[1] + x[2] * v[2]) - (carre(v[0]) + carre(v[1]) + carre(v[2])) * ( carre(x[0]) + carre(x[1]) + carre(x[2]) - (r2));
 	if (delta < 0)
 		return -1;
@@ -70,42 +70,42 @@ double Bille::calculerTempsBille(Bille& autre, double d) {
 void Boule::calculerTempsBoule(double d) {
 	for(int i(1);i< m_M;++i)
 		for (int j(0); j < i; ++j){
-			double res = this->m_liste_billes[i].calculerTempsBille(this->m_liste_billes[j],d);
-			this->m_liste_temps_billes[i][j] = res;
-			this->m_liste_temps_billes[j][i] = res;
+			double res = m_liste_billes[i].calculerTempsBille(m_liste_billes[j],d);
+			m_liste_temps_billes[i][j] = res;
+			m_liste_temps_billes[j][i] = res;
 		}
 
 		for (int i(0); i < m_M; ++i)
-			this->m_liste_temps_boule[i] = this->m_liste_billes[i].calculerTempsBille(*this,d);
+			m_liste_temps_boule[i] = m_liste_billes[i].calculerTempsBille(*this,d);
 }
 
 void Carte::calculerTempsCarte(double d) {
 	for (int i(0); i < m_N; ++i) //calculer dans les boules : entre les billes et billes avec boule
-		this->m_liste_boules[i].calculerTempsBoule(d);
+		m_liste_boules[i].calculerTempsBoule(d);
 
 	for (int i(1); i < m_N; ++i) //calculer entre les boules
 		for (int j(0); j < i; ++j){
-			double a = this->m_liste_boules[i].calculerTempsBille(this->m_liste_boules[j],d);
-			this->m_liste_temps_boules[i][j] = a;
-			this->m_liste_temps_boules[j][i] = a;
+			double a = m_liste_boules[i].calculerTempsBille(m_liste_boules[j],d);
+			m_liste_temps_boules[i][j] = a;
+			m_liste_temps_boules[j][i] = a;
 		}
 
 		for (int i(0); i < m_N; ++i)
-			this->m_liste_temps_carte[i] = this->m_liste_boules[i].calculerTempsBille(*this,d); //calculer boule + carte
+			m_liste_temps_carte[i] = m_liste_boules[i].calculerTempsBille(*this,d); //calculer boule + carte
 
 		return;
 }
 
 void Carte::avancerTempsCarte(double temps) {
 	for (int i(0); i < m_N; ++i)
-		this->m_liste_boules[i].avancerTempsBoule(temps); //dans chaque boule et entre billes
-	this->avancerTempsBille(temps); // temps de collison entre boules + carte
+		m_liste_boules[i].avancerTempsBoule(temps); //dans chaque boule et entre billes
+	avancerTempsBille(temps); // temps de collison entre boules + carte
 	for (int i(0); i < m_N; ++i)
-		this->m_liste_temps_carte[i] -= temps;
+		m_liste_temps_carte[i] -= temps;
 	for (int i(1); i < m_N; ++i)
 		for (int j(0); j < i; ++j) {
-			this->m_liste_temps_boules[i][j] -= temps; //temps de collision entre boules
-			this->m_liste_temps_boules[j][i] -= temps;
+			m_liste_temps_boules[i][j] -= temps; //temps de collision entre boules
+			m_liste_temps_boules[j][i] -= temps;
 		}
 
 	return;
@@ -114,15 +114,15 @@ void Carte::avancerTempsCarte(double temps) {
 void Boule::avancerTempsBoule(double temps) { //avance dans la boule, entre les billes, et leurs positions (boule + billes)
 
 	for (int i(0); i < m_M; ++i)
-		this->m_liste_billes[i].avancerTempsBille(temps);
-	this->avancerTempsBille(temps);
+		m_liste_billes[i].avancerTempsBille(temps);
+	avancerTempsBille(temps);
 	for (int i(0); i < m_M; ++i)
 		for (int j(0); j < i; ++j) {
-			this->m_liste_temps_billes[i][j] -= temps;
-			this->m_liste_temps_billes[j][i] -= temps;
+			m_liste_temps_billes[i][j] -= temps;
+			m_liste_temps_billes[j][i] -= temps;
 		}
 	for (int i(0); i < m_M; ++i)
-		this->m_liste_temps_boule[i] -= temps;
+		m_liste_temps_boule[i] -= temps;
 
 	return;
 }
@@ -130,14 +130,14 @@ void Boule::avancerTempsBoule(double temps) { //avance dans la boule, entre les 
 
 void Bille::avancerTempsBille(double temps) {
 	for (int i(0); i < 3; ++i)
-		this->m_x[i] = this->m_x[i] + temps * m_v[i];
+		m_x[i] = m_x[i] + temps * m_v[i];
 	return;
 }
 
 double Bille::distance(Bille& autre) {
 	double somme = 0;
 	for (int i(0); i < 3; ++i)
-		somme += carre(this->m_x[i] - autre.m_x[i]);
+		somme += carre(m_x[i] - autre.m_x[i]);
 	return sqrt(somme);
 }
 
@@ -149,29 +149,29 @@ label:
 label4:
 	compteur = 0;
 	modifie = false;
-	for (int i(0); i < this->m_N; ++i)
-		for (int j(1); j < this->m_M; ++j)
+	for (int i(0); i < m_N; ++i)
+		for (int j(1); j < m_M; ++j)
 			for (int k(0); k < j; ++k) //dans la boule i entre les billes j et k ...
-				if (this->m_liste_boules[i].m_liste_billes[j].distance(this->m_liste_boules[i].m_liste_billes[k]) < (this->m_liste_boules[i].m_liste_billes[j].m_r * 2 + d * 2))
-					if (this->m_liste_boules[i].m_liste_billes[j].calculerTempsBille(this->m_liste_boules[i].m_liste_billes[k], 0) > 0) {
-						this->m_liste_boules[i].m_liste_billes[j].collision(this->m_liste_boules[i].m_liste_billes[k]); //on fait la collision
-						this->m_liste_boules[i].m_liste_temps_billes[j][k] = -1; //les billes ne se retouchent plus ...
-						this->m_liste_boules[i].m_liste_temps_billes[k][j] = -1;
+				if (m_liste_boules[i].m_liste_billes[j].distance(m_liste_boules[i].m_liste_billes[k]) < (m_liste_boules[i].m_liste_billes[j].m_r * 2 + d * 2))
+					if (m_liste_boules[i].m_liste_billes[j].calculerTempsBille(m_liste_boules[i].m_liste_billes[k], 0) > 0) {
+						m_liste_boules[i].m_liste_billes[j].collision(m_liste_boules[i].m_liste_billes[k]); //on fait la collision
+						m_liste_boules[i].m_liste_temps_billes[j][k] = -1; //les billes ne se retouchent plus ...
+						m_liste_boules[i].m_liste_temps_billes[k][j] = -1;
 						//puis on recalcule le temps : les deux billes avec la boule i , les deux billes, les deux billes avec les autres billes ...
-						this->m_liste_boules[i].m_liste_temps_boule[j] = m_liste_boules[i].calculerTempsBille(this->m_liste_boules[i].m_liste_billes[j], d);
-						this->m_liste_boules[i].m_liste_temps_boule[k] = m_liste_boules[i].calculerTempsBille(this->m_liste_boules[i].m_liste_billes[k], d);
+						m_liste_boules[i].m_liste_temps_boule[j] = m_liste_boules[i].calculerTempsBille(m_liste_boules[i].m_liste_billes[j], d);
+						m_liste_boules[i].m_liste_temps_boule[k] = m_liste_boules[i].calculerTempsBille(m_liste_boules[i].m_liste_billes[k], d);
 						//m_liste_boules[i].m_liste_temps_billes[j][k] = m_liste_boules[i].m_liste_billes[j].calculerTempsBille(m_liste_boules[i].m_liste_billes[k], d);
 						//m_liste_boules[i].m_liste_temps_billes[k][j] = m_liste_boules[i].m_liste_temps_billes[j][k];
 						for (int l(0); l < m_M; ++l) {
 							//if ((l == j) || (l == k))
 							//	continue;
 							if (j != l) {
-								this->m_liste_boules[i].m_liste_temps_billes[j][l] = this->m_liste_boules[i].m_liste_billes[j].calculerTempsBille(this->m_liste_boules[i].m_liste_billes[l], d);
-								this->m_liste_boules[i].m_liste_temps_billes[l][j] = this->m_liste_boules[i].m_liste_temps_billes[j][l];
+								m_liste_boules[i].m_liste_temps_billes[j][l] = m_liste_boules[i].m_liste_billes[j].calculerTempsBille(m_liste_boules[i].m_liste_billes[l], d);
+								m_liste_boules[i].m_liste_temps_billes[l][j] = m_liste_boules[i].m_liste_temps_billes[j][l];
 							}
 							if (k != l) {
-								this->m_liste_boules[i].m_liste_temps_billes[k][l] = this->m_liste_boules[i].m_liste_billes[k].calculerTempsBille(this->m_liste_boules[i].m_liste_billes[l], d);
-								this->m_liste_boules[i].m_liste_temps_billes[l][k] = this->m_liste_boules[i].m_liste_temps_billes[k][l];
+								m_liste_boules[i].m_liste_temps_billes[k][l] = m_liste_boules[i].m_liste_billes[k].calculerTempsBille(m_liste_boules[i].m_liste_billes[l], d);
+								m_liste_boules[i].m_liste_temps_billes[l][k] = m_liste_boules[i].m_liste_temps_billes[k][l];
 							}
 
 						}
@@ -189,32 +189,32 @@ label3:
 	compteur = 0;
 
 	//dans la boule i, avec la bille j ...
-	for (int i(0); i < this->m_N; ++i)
-		for (int j(0); j < this->m_M; ++j)
-			if (this->m_liste_boules[i].distance(this->m_liste_boules[i].m_liste_billes[j]) > (m_liste_boules[i].m_r - m_liste_boules[i].m_liste_billes[j].m_r - d * 2))
-				if (this->m_liste_boules[i].calculerTempsBille(this->m_liste_boules[i].m_liste_billes[j], 0) *
-					sqrt(this->m_liste_boules[i].m_liste_billes[j].v2(this->m_liste_boules[i])) < 3 * d) { //si il y a collision ... entre boule i et bille j
-					this->m_liste_boules[i].collision(this->m_liste_boules[i].m_liste_billes[j]); //calcul de la collision
-					//this->m_liste_boules[i].m_liste_temps_boule[j] = this->m_liste_boules[i].calculerTempsBille(this->m_liste_boules[i].m_liste_billes[j], d); //on recalculle la collision suivante ...
+	for (int i(0); i < m_N; ++i)
+		for (int j(0); j < m_M; ++j)
+			if (m_liste_boules[i].distance(m_liste_boules[i].m_liste_billes[j]) > (m_liste_boules[i].m_r - m_liste_boules[i].m_liste_billes[j].m_r - d * 2))
+				if (m_liste_boules[i].calculerTempsBille(m_liste_boules[i].m_liste_billes[j], 0) *
+					sqrt(m_liste_boules[i].m_liste_billes[j].v2(m_liste_boules[i])) < 3 * d) { //si il y a collision ... entre boule i et bille j
+					m_liste_boules[i].collision(m_liste_boules[i].m_liste_billes[j]); //calcul de la collision
+					//m_liste_boules[i].m_liste_temps_boule[j] = m_liste_boules[i].calculerTempsBille(m_liste_boules[i].m_liste_billes[j], d); //on recalculle la collision suivante ...
 							//on met à jour la boule i avec : la carte, les autres boules, + (la boule et les billes, les billes). 
-					this->m_liste_temps_carte[i] = this->calculerTempsBille(this->m_liste_boules[i], d);
-					for (int k(0); k < this->m_N; ++k) { //boule i avec boule k ...
+					m_liste_temps_carte[i] = calculerTempsBille(m_liste_boules[i], d);
+					for (int k(0); k < m_N; ++k) { //boule i avec boule k ...
 						if (k == i)
 							continue;
-						this->m_liste_temps_boules[i][k] = this->m_liste_boules[i].calculerTempsBille(this->m_liste_boules[k], d);
-						this->m_liste_temps_boules[k][i] = this->m_liste_temps_boules[i][k];
+						m_liste_temps_boules[i][k] = m_liste_boules[i].calculerTempsBille(m_liste_boules[k], d);
+						m_liste_temps_boules[k][i] = m_liste_temps_boules[i][k];
 					}
-					for (int k(0); k < this->m_M; ++k) {//la boule i avec ses billes
+					for (int k(0); k < m_M; ++k) {//la boule i avec ses billes
 						//if (k == j)
 						//	continue;
-						this->m_liste_boules[i].m_liste_temps_boule[k] = this->m_liste_boules[i].calculerTempsBille(this->m_liste_boules[i].m_liste_billes[k], d);
+						m_liste_boules[i].m_liste_temps_boule[k] = m_liste_boules[i].calculerTempsBille(m_liste_boules[i].m_liste_billes[k], d);
 					}
 					//les billes k avec la bille j
 					for (int k(0); k < m_M; ++k) {
 						if (k == j)
 							continue;
-						this->m_liste_boules[i].m_liste_temps_billes[j][k] = this->m_liste_boules[i].m_liste_billes[j].calculerTempsBille(this->m_liste_boules[i].m_liste_billes[k], d);
-						this->m_liste_boules[i].m_liste_temps_billes[k][j] = this->m_liste_boules[i].m_liste_temps_billes[j][k];
+						m_liste_boules[i].m_liste_temps_billes[j][k] = m_liste_boules[i].m_liste_billes[j].calculerTempsBille(m_liste_boules[i].m_liste_billes[k], d);
+						m_liste_boules[i].m_liste_temps_billes[k][j] = m_liste_boules[i].m_liste_temps_billes[j][k];
 					}
 					//goto label3;
 					//cout << "label3" << endl;
@@ -231,34 +231,34 @@ label3:
 label2:
 	modifie = false;
 	compteur = 0;
-	for (int i(1); i < this->m_N; ++i) //entre boule i et boule j :
+	for (int i(1); i < m_N; ++i) //entre boule i et boule j :
 		for (int j(0); j < i; ++j)
-			if (this->m_liste_boules[i].distance(this->m_liste_boules[j]) < (this->m_liste_boules[i].m_r * 2 + d * 2)) //si  dans la zone de collision
-				if (this->m_liste_boules[i].calculerTempsBille(this->m_liste_boules[j], 0) > 0) {
-					this->m_liste_boules[i].collision(this->m_liste_boules[j]); //collision entre i et j;
-					this->m_liste_temps_boules[i][j] = -1; //normalement elles ne se retouchent plus ...
-					this->m_liste_temps_boules[j][i] = -1;
+			if (m_liste_boules[i].distance(m_liste_boules[j]) < (m_liste_boules[i].m_r * 2 + d * 2)) //si  dans la zone de collision
+				if (m_liste_boules[i].calculerTempsBille(m_liste_boules[j], 0) > 0) {
+					m_liste_boules[i].collision(m_liste_boules[j]); //collision entre i et j;
+					m_liste_temps_boules[i][j] = -1; //normalement elles ne se retouchent plus ...
+					m_liste_temps_boules[j][i] = -1;
 
 					//Puis recalculer temps pour : boule k avec i et k avec j, et i avec ses billes, et j avec ses billes, et i et j avec la carte...
 					for (int k(0); k < m_N; ++k) {
 						//if ((i == k) || (j == k))
 						//	continue;
 						if (k != i) {
-							this->m_liste_temps_boules[i][k] = this->m_liste_boules[i].calculerTempsBille(this->m_liste_boules[k], d);
-							this->m_liste_temps_boules[k][i] = this->m_liste_temps_boules[i][k];
+							m_liste_temps_boules[i][k] = m_liste_boules[i].calculerTempsBille(m_liste_boules[k], d);
+							m_liste_temps_boules[k][i] = m_liste_temps_boules[i][k];
 						}
 						if (k != j) {
-							this->m_liste_temps_boules[j][k] = this->m_liste_boules[j].calculerTempsBille(this->m_liste_boules[k], d);
-							this->m_liste_temps_boules[k][j] = this->m_liste_temps_boules[j][k];
+							m_liste_temps_boules[j][k] = m_liste_boules[j].calculerTempsBille(m_liste_boules[k], d);
+							m_liste_temps_boules[k][j] = m_liste_temps_boules[j][k];
 						}
 					}
-					this->m_liste_temps_carte[i] = this->calculerTempsBille(this->m_liste_boules[i], d);
-					this->m_liste_temps_carte[j] = this->calculerTempsBille(this->m_liste_boules[j], d);
+					m_liste_temps_carte[i] = calculerTempsBille(m_liste_boules[i], d);
+					m_liste_temps_carte[j] = calculerTempsBille(m_liste_boules[j], d);
 					for (int k(0); k < m_M; ++k) {
-						this->m_liste_boules[i].m_liste_temps_boule[k] = this->m_liste_boules[i].m_liste_billes[k].calculerTempsBille(this->m_liste_boules[i], d);
+						m_liste_boules[i].m_liste_temps_boule[k] = m_liste_boules[i].m_liste_billes[k].calculerTempsBille(m_liste_boules[i], d);
 					}
 					for (int k(0); k < m_M; ++k) {
-						this->m_liste_boules[j].m_liste_temps_boule[k] = this->m_liste_boules[j].m_liste_billes[k].calculerTempsBille(this->m_liste_boules[j], d);
+						m_liste_boules[j].m_liste_temps_boule[k] = m_liste_boules[j].m_liste_billes[k].calculerTempsBille(m_liste_boules[j], d);
 					}
 					//m_liste_temps_boules[i][j] = m_liste_boules[i].calculerTempsBille(m_liste_boules[j], d);
 					//m_liste_temps_boules[j][i] = m_liste_temps_boules[i][j];
@@ -276,22 +276,22 @@ label1:
 	modifie = false;
 	compteur = 0;
 	//on commence par la collision de la carte avec une boule
-	for (int i(0); i < this->m_N; ++i)
-		if (this->distance(this->m_liste_boules[i]) > (this->m_r - this->m_liste_boules[i].m_r) - d * 2) //si dans la distance de collision (d*2) : carte + boule
-			if (this->calculerTempsBille(m_liste_boules[i], 0) *
-				sqrt(this->v2(this->m_liste_boules[i])) < 3 * d) //si il y aura une collision !
+	for (int i(0); i < m_N; ++i)
+		if (distance(m_liste_boules[i]) > (m_r - m_liste_boules[i].m_r) - d * 2) //si dans la distance de collision (d*2) : carte + boule
+			if (calculerTempsBille(m_liste_boules[i], 0) *
+				sqrt(v2(m_liste_boules[i])) < 3 * d) //si il y aura une collision !
 			{
-				this->collision(this->m_liste_boules[i]); //on change les vitesses, puis on recalcule les temps
+				collision(m_liste_boules[i]); //on change les vitesses, puis on recalcule les temps
 				for (int j(0); j < m_N; ++j) { //on calcule le temps pour la boule i avec les autres boules (j)
 					if (j == i)
 						continue;
-					this->m_liste_temps_boules[i][j] = this->m_liste_boules[i].calculerTempsBille(this->m_liste_boules[j], d);
-					this->m_liste_temps_boules[j][i] = this->m_liste_temps_boules[i][j];
+					m_liste_temps_boules[i][j] = m_liste_boules[i].calculerTempsBille(m_liste_boules[j], d);
+					m_liste_temps_boules[j][i] = m_liste_temps_boules[i][j];
 				}
 				for (int j(0); j < m_N; ++j) //dont la carte avec la boule j ...
-					this->m_liste_temps_carte[j] = this->calculerTempsBille(this->m_liste_boules[j], d);//on calcule le temps pour la carte avec les autres boules
+					m_liste_temps_carte[j] = calculerTempsBille(m_liste_boules[j], d);//on calcule le temps pour la carte avec les autres boules
 				for (int j(0); j < m_M; ++j) //on calcule la boule i avec ses billes (j)
-					this->m_liste_boules[i].m_liste_temps_boule[j] = this->m_liste_boules[i].m_liste_billes[j].calculerTempsBille(this->m_liste_boules[i], d); //entre la boule et ses billes. On ne calcule pas entre les billes !
+					m_liste_boules[i].m_liste_temps_boule[j] = m_liste_boules[i].m_liste_billes[j].calculerTempsBille(m_liste_boules[i], d); //entre la boule et ses billes. On ne calcule pas entre les billes !
 				//fin du recalcul de temps ! pour la collsion de la carte avec la boule i.
 				//goto label1;
 				//cout << "label1" << endl;
@@ -308,29 +308,29 @@ label1:
 
 double Carte::tempsMin() {
 	double t = 0;
-	for (int i(0); i < this->m_N; ++i)
-		if (this->m_liste_temps_carte[i] > 0)
-			t = this->m_liste_temps_carte[i]; //on prend une valeur de t >0, quelconque
+	for (int i(0); i < m_N; ++i)
+		if (m_liste_temps_carte[i] > 0)
+			t = m_liste_temps_carte[i]; //on prend une valeur de t >0, quelconque
 
-	for (int i(0); i < this->m_N; ++i)
-		if ((this->m_liste_temps_carte[i] < t) && (this->m_liste_temps_carte[i]>0))
-			t = this->m_liste_temps_carte[i];
+	for (int i(0); i < m_N; ++i)
+		if ((m_liste_temps_carte[i] < t) && (m_liste_temps_carte[i]>0))
+			t = m_liste_temps_carte[i];
 
-	for (int i(1); i < this->m_N; ++i)
+	for (int i(1); i < m_N; ++i)
 		for (int j(0); j < i; ++j)
-			if ((this->m_liste_temps_boules[i][j] < t) && (this->m_liste_temps_boules[i][j]>0))
-				t = this->m_liste_temps_boules[i][j];
+			if ((m_liste_temps_boules[i][j] < t) && (m_liste_temps_boules[i][j]>0))
+				t = m_liste_temps_boules[i][j];
 
-	for(int i(0);i< this->m_N;++i)
-		for(int j(0);j< this->m_M;++j)
-			if ((this->m_liste_boules[i].m_liste_temps_boule[j] <t) && (this->m_liste_boules[i].m_liste_temps_boule[j] >0))
-				t = this->m_liste_boules[i].m_liste_temps_boule[j];
+	for(int i(0);i< m_N;++i)
+		for(int j(0);j< m_M;++j)
+			if ((m_liste_boules[i].m_liste_temps_boule[j] <t) && (m_liste_boules[i].m_liste_temps_boule[j] >0))
+				t = m_liste_boules[i].m_liste_temps_boule[j];
 
-	for(int i(0);i< this->m_N;++i)
-		for(int j(1);j< this->m_M;++j)
+	for(int i(0);i< m_N;++i)
+		for(int j(1);j< m_M;++j)
 			for(int k(0);k<j;++k)
-				if ((this->m_liste_boules[i].m_liste_temps_billes[j][k] >0) && (this->m_liste_boules[i].m_liste_temps_billes[j][k] <t))
-					t = this->m_liste_boules[i].m_liste_temps_billes[j][k];
+				if ((m_liste_boules[i].m_liste_temps_billes[j][k] >0) && (m_liste_boules[i].m_liste_temps_billes[j][k] <t))
+					t = m_liste_boules[i].m_liste_temps_billes[j][k];
 
 	return t; //le plus petit temps positif
 }
@@ -338,14 +338,14 @@ double Carte::tempsMin() {
 
 void Carte::iterer(double tempsMin, double tempsMax,double d) {
 	double t = 0;
-	this->calculerTempsCarte(d);
+	calculerTempsCarte(d);
 
 	while(t < tempsMax) {
 		double deltaT = this->tempsMin();
-		this->avancerTempsCarte(deltaT);
+		avancerTempsCarte(deltaT);
 		if (t > tempsMin)
 			remplirHisto(deltaT);
-		this->calculCollision(d);
+		calculCollision(d);
 		t += deltaT;
 		cout << "temps cumule : " << t << endl;
 	}
@@ -378,19 +378,19 @@ Carte::Carte() {
 };
 
 Carte::Carte(int n, int m, double temperature, double fraction, double rapport_masse,double rayon) { //n boules, n*n billes (n=15), fraction de l'espace (r), rapport des masses (=3). Ne pas oublier le type.
-	this->m_N = n;
-	this->m_M = m;
-	this->masse_Carte = 1;
-	this->masse_Boule = 1 / rapport_masse;
-	this->masse_Bille = 1 / carre(rapport_masse);
+	m_N = n;
+	m_M = m;
+	masse_Carte = 1;
+	masse_Boule = 1 / rapport_masse;
+	masse_Bille = 1 / carre(rapport_masse);
 
-	for (int j(0); j < this->m_N; ++j)
-		this->m_liste_temps_boules.push_back(vector<double>(m_N));
+	for (int j(0); j < m_N; ++j)
+		m_liste_temps_boules.push_back(vector<double>(m_N));
 
 	cout << "allocation liste temps boules" << endl;
 
 
-	this->m_liste_temps_carte.resize(m_N);
+	m_liste_temps_carte.resize(m_N);
 
 
 	//TRandom essai();
@@ -422,7 +422,7 @@ Carte::Carte(int n, int m, double temperature, double fraction, double rapport_m
 				k[2] += 1;
 			}
 		}
-		this->m_liste_boules.push_back(boule);
+		m_liste_boules.push_back(boule);
 		cout << "ajouter Boule " << i << endl;
 	}
 
@@ -432,36 +432,36 @@ Carte::Carte(int n, int m, double temperature, double fraction, double rapport_m
 	cout << "allouer histogrammes" << endl;
 
 
-	this->masse_Carte = 1;
-	this->masse_Boule = 1 / rapport_masse;
-	this->masse_Bille = 1 / carre(rapport_masse);
+	masse_Carte = 1;
+	masse_Boule = 1 / rapport_masse;
+	masse_Bille = 1 / carre(rapport_masse);
 
 	double m_x[3] = {0.,0.,0.};
-	this->m_m = 1;
-	this->m_type = 0;
-	this->m_r = rayon;
+	m_m = 1;
+	m_type = 0;
+	m_r = rayon;
 
 	double impulsion[3] = { 0,0,0 };
 	cout << "avant calcul vitesse" << endl;
-	cout << "nombre de boules" << this->m_liste_boules.size() << endl;
+	cout << "nombre de boules" << m_liste_boules.size() << endl;
 
-	for (int i(0); i < this->m_N; ++i) {
-		impulsion[0] += m_liste_boules[i].m_v[0] * (this->masse_Boule);
-		impulsion[1] += m_liste_boules[i].m_v[1] * (this->masse_Boule);
-		impulsion[2] += m_liste_boules[i].m_v[2] * (this->masse_Boule);
+	for (int i(0); i < m_N; ++i) {
+		impulsion[0] += m_liste_boules[i].m_v[0] * (masse_Boule);
+		impulsion[1] += m_liste_boules[i].m_v[1] * (masse_Boule);
+		impulsion[2] += m_liste_boules[i].m_v[2] * (masse_Boule);
 		cout << "vitesse boule " <<i<< endl;
 		cout << "taille liste " << m_liste_boules[i].m_liste_billes.size() << endl;
-		for (int j(0); j < this->m_M; ++j) {
-			impulsion[0] += m_liste_boules[i].m_liste_billes[j].m_v[0] * (this->masse_Bille);
-			impulsion[1] += m_liste_boules[i].m_liste_billes[j].m_v[1] * (this->masse_Bille);
-			impulsion[2] += m_liste_boules[i].m_liste_billes[j].m_v[2] * (this->masse_Bille);
+		for (int j(0); j < m_M; ++j) {
+			impulsion[0] += m_liste_boules[i].m_liste_billes[j].m_v[0] * (masse_Bille);
+			impulsion[1] += m_liste_boules[i].m_liste_billes[j].m_v[1] * (masse_Bille);
+			impulsion[2] += m_liste_boules[i].m_liste_billes[j].m_v[2] * (masse_Bille);
 		}
 	}
 	cout << "calcul vitesse fin" << endl;
 
 	for (int k(0); k < 3; ++k) {
-		this->m_v[k] = - impulsion[k];
-		this->m_x[k] = 0;
+		m_v[k] = - impulsion[k];
+		m_x[k] = 0;
 	}
 
 
@@ -478,8 +478,8 @@ Boule::Boule(double temperature, double fraction, double rapport_masse, double r
 	vitesse[1] = essai->Gaus(0, temperature);
 	vitesse[2] = essai->Gaus(0, temperature);
 
-	this->m_M = m;
-	this->m_liste_billes.resize(0);
+	m_M = m;
+	m_liste_billes.resize(0);
 
 
 	int nCoord = ceil(pow(m_M, 1. / 3.));
@@ -488,7 +488,7 @@ Boule::Boule(double temperature, double fraction, double rapport_masse, double r
 	int k[3] = { 0,0,0 };
 	cout << "allocation boule ..." << endl;
 
-	for (int i(0); i < this->m_M; ++i) {
+	for (int i(0); i < m_M; ++i) {
 		Bille bille;
 		bille.m_x[0] = a / nCoord * (.5 + k[0]) - a / 2;
 		bille.m_x[1] = a / nCoord * (.5 + k[1]) - a / 2;
@@ -511,29 +511,29 @@ Boule::Boule(double temperature, double fraction, double rapport_masse, double r
 		bille.m_r = (a / nCoord) * sqrt(3) / 2 / fraction;
 		bille.m_type = 2;
 		bille.m_m = 1 / carre(rapport_masse);
-		this->m_liste_billes.push_back(bille);
+		m_liste_billes.push_back(bille);
 		cout << "bille : " << i << endl;
 	}
 
 	double d_vitesse[3] = { 0,0,0 };
-	for (int i(0); i < this->m_M; ++i) {
+	for (int i(0); i < m_M; ++i) {
 		d_vitesse[0] += m_liste_billes[i].m_v[0] - vitesse[0];
 		d_vitesse[1] += m_liste_billes[i].m_v[1] - vitesse[1];
 		d_vitesse[2] += m_liste_billes[i].m_v[2] - vitesse[2];
 	}
 	for (int k(0); k < 3; ++k) {
 
-		this->m_x[k] = 0;
-		this->m_v[k] = -d_vitesse[0] / rapport_masse;
+		m_x[k] = 0;
+		m_v[k] = -d_vitesse[0] / rapport_masse;
 	}
-	this->m_r = rayon_boule;
-	this->m_m = 1 / rapport_masse;
-	this->m_type = 1;
+	m_r = rayon_boule;
+	m_m = 1 / rapport_masse;
+	m_type = 1;
 
-	for(int j(0);j< this->m_M;++j)
-		this->m_liste_temps_billes.push_back(vector<double> (this->m_M));
+	for(int j(0);j< m_M;++j)
+		m_liste_temps_billes.push_back(vector<double> (m_M));
 
-	this->m_liste_temps_boule.resize(this->m_M);
+	m_liste_temps_boule.resize(m_M);
 }
 
 Bille::Bille() {
