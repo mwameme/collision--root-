@@ -1,10 +1,17 @@
 #include "carte.h"
+#include <TApplication.h>
+
 #include <vector>
 #include <TRandom.h>
 #include <TMath.h>
+#include <TH1D.h>
 #include <iostream>
 
 using namespace std;
+
+double carre(double nombre) {
+	return nombre * nombre;
+}
 
 
 void Bille::collision(Bille& autre) {
@@ -17,6 +24,7 @@ void Bille::collision(Bille& autre) {
 	double e[3] = { 0,0,0 };
 	for (int i(0); i < 3; ++i) 
 		e[i] = (m_x[i] - autre.m_x[i]) / r; //le vecteur de norme 1 reliant les centres des billes
+	
 
 	double m = ((m_v[0] - autre.m_v[0]) * e[0] + (m_v[1] - autre.m_v[1]) * e[1] + (m_v[2] - autre.m_v[2]) * e[2]); //la vitesse relative entre les centres
 	double vPar[3] = { m * e[0],m * e[1],m * e[2] }; //la vitesse parallèle
@@ -28,10 +36,22 @@ void Bille::collision(Bille& autre) {
 	return;
 }
 
-
-double carre(double nombre) {
-	return nombre * nombre;
+bool Bille::enCollision(Bille& autre, double d) {
+	double r;
+	if (m_type == autre.m_type) {
+		if (distance(autre) < 2 * m_r + 2 * d) //distance de collision, puis directions contraires
+			if ((m_x[0] - autre.m_x[0]) * (m_v[0] - autre.m_v[0]) + (m_x[1] - autre.m_x[1]) * (m_v[1] - autre.m_v[1]) + (m_x[2] - autre.m_x[2]) * (m_v[2] - autre.m_v[2]) <= 0)
+				return true;
+		return false;
+	}
+	else {
+		if (distance(autre) > abs(m_r - autre.m_r) - 2 * d) //distance de collision, puis direction contraires ...
+			if ((m_x[0] - autre.m_x[0]) * (m_v[0] - autre.m_v[0]) + (m_x[1] - autre.m_x[1]) * (m_v[1] - autre.m_v[1]) + (m_x[2] - autre.m_x[2]) * (m_v[2] - autre.m_v[2]) >= 0)
+				return true;
+		return false;
+	}
 }
+
 
 double Bille::v2(Bille& autre) {
 	return carre(m_v[0] - autre.m_v[0]) + carre(m_v[1] - autre.m_v[1]) + carre(m_v[2] - autre.m_v[2]);
@@ -55,15 +75,39 @@ double Bille::calculerTempsBille(Bille& autre, double d) {
 		return -1;
 	double t1 = (-(x[0] * v[0] + x[1] * v[1] + x[2] * v[2]) + sqrt(delta)) / (carre(v[0] ) + carre(v[1]) + carre(v[2]));
 	double t2 = (-(x[0] * v[0] + x[1] * v[1] + x[2] * v[2]) - sqrt(delta)) / (carre(v[0]) + carre(v[1]) + carre(v[2]));
-	if ((t1 < 0) && (t2 < 0))
-		return -1;
-	if (t1 < 0)
-		return t2;
-	if (t2 < 0)
-		return t1;
-	if (t1 < t2)
-		return t1;
-	return t2;
+
+	double scalaire = x[0] * v[0] + x[1] * v[1] + x[2] * v[2];
+
+	if (m_type == autre.m_type)
+		if (scalaire <= 0) {
+			if ((t1 < 0) && (t2 < 0))
+				return -1;
+			if (t1 < 0)
+				return t2;
+			if (t2 < 0)
+				return t1;
+			if (t1 < t2)
+				return t1;
+			return t2;
+		}
+		else return -1;
+	else {
+		if (scalaire >= 0) {
+			if ((t1 < 0) && (t2 < 0))
+				return -1;
+			if (t1 < 0)
+				return t2;
+			if (t2 < 0)
+				return t1;
+			if (t1 < t2)
+				return t1;
+			return t2;
+		}
+		else {
+			return max(t2, t1);
+		}
+	}
+
 }//le plus petit temps positif ... ou négatif == impossible
 
 
@@ -76,7 +120,7 @@ void Boule::calculerTempsBoule(double d) {
 		}
 
 		for (int i(0); i < m_M; ++i)
-			m_liste_temps_boule[i] = m_liste_billes[i].calculerTempsBille(*this,d);
+			m_liste_temps_boule[i] = calculerTempsBille(m_liste_billes[i],d);
 }
 
 void Carte::calculerTempsCarte(double d) {
@@ -91,7 +135,7 @@ void Carte::calculerTempsCarte(double d) {
 		}
 
 		for (int i(0); i < m_N; ++i)
-			m_liste_temps_carte[i] = m_liste_boules[i].calculerTempsBille(*this,d); //calculer boule + carte
+			m_liste_temps_carte[i] = calculerTempsBille(m_liste_boules[i],d); //calculer boule + carte
 
 		return;
 }
@@ -99,7 +143,7 @@ void Carte::calculerTempsCarte(double d) {
 void Carte::avancerTempsCarte(double temps) {
 	for (int i(0); i < m_N; ++i)
 		m_liste_boules[i].avancerTempsBoule(temps); //dans chaque boule et entre billes
-	avancerTempsBille(temps); // temps de collison entre boules + carte
+	this->avancerTempsBille(temps); // temps de collison entre boules + carte
 	for (int i(0); i < m_N; ++i)
 		m_liste_temps_carte[i] -= temps;
 	for (int i(1); i < m_N; ++i)
@@ -115,7 +159,7 @@ void Boule::avancerTempsBoule(double temps) { //avance dans la boule, entre les 
 
 	for (int i(0); i < m_M; ++i)
 		m_liste_billes[i].avancerTempsBille(temps);
-	avancerTempsBille(temps);
+	this->avancerTempsBille(temps);
 	for (int i(0); i < m_M; ++i)
 		for (int j(0); j < i; ++j) {
 			m_liste_temps_billes[i][j] -= temps;
@@ -142,19 +186,16 @@ double Bille::distance(Bille& autre) {
 }
 
 void Carte::calculCollision(double d) {
-	bool modifie;
+	//bool modifie;
 	int compteur = 0;
-label:
 
-label4:
-	compteur = 0;
-	modifie = false;
+		//compteur = 0;
 	for (int i(0); i < m_N; ++i)
 		for (int j(1); j < m_M; ++j)
 			for (int k(0); k < j; ++k) //dans la boule i entre les billes j et k ...
-				if (m_liste_boules[i].m_liste_billes[j].distance(m_liste_boules[i].m_liste_billes[k]) < (m_liste_boules[i].m_liste_billes[j].m_r * 2 + d * 2))
-					if (m_liste_boules[i].m_liste_billes[j].calculerTempsBille(m_liste_boules[i].m_liste_billes[k], 0) > 0) {
+				if (m_liste_boules[i].m_liste_billes[j].enCollision(m_liste_boules[i].m_liste_billes[k],d)) {
 						m_liste_boules[i].m_liste_billes[j].collision(m_liste_boules[i].m_liste_billes[k]); //on fait la collision
+						/*
 						m_liste_boules[i].m_liste_temps_billes[j][k] = -1; //les billes ne se retouchent plus ...
 						m_liste_boules[i].m_liste_temps_billes[k][j] = -1;
 						//puis on recalcule le temps : les deux billes avec la boule i , les deux billes, les deux billes avec les autres billes ...
@@ -176,27 +217,22 @@ label4:
 
 						}
 						//goto label4;
-						cout << "label4" << endl;
+						//cout << "label4" << endl;
 						//modifie = true;
-						compteur++;
+						*/
+						calculerTempsCarte(d);
+						//cout << "4" << endl;
+						++compteur;
 					}
-	cout << "compteur4 : " << compteur << endl;
-	if (modifie)
-		goto label;
-
-label3:
-	modifie = false;
-	compteur = 0;
 
 	//dans la boule i, avec la bille j ...
 	for (int i(0); i < m_N; ++i)
 		for (int j(0); j < m_M; ++j)
-			if (m_liste_boules[i].distance(m_liste_boules[i].m_liste_billes[j]) > (m_liste_boules[i].m_r - m_liste_boules[i].m_liste_billes[j].m_r - d * 2))
-				if (m_liste_boules[i].calculerTempsBille(m_liste_boules[i].m_liste_billes[j], 0) *
-					sqrt(m_liste_boules[i].m_liste_billes[j].v2(m_liste_boules[i])) < 3 * d) { //si il y a collision ... entre boule i et bille j
+			if (m_liste_boules[i].enCollision(m_liste_boules[i].m_liste_billes[j],d)) { //si il y a collision ... entre boule i et bille j
 					m_liste_boules[i].collision(m_liste_boules[i].m_liste_billes[j]); //calcul de la collision
+					/*
 					//m_liste_boules[i].m_liste_temps_boule[j] = m_liste_boules[i].calculerTempsBille(m_liste_boules[i].m_liste_billes[j], d); //on recalculle la collision suivante ...
-							//on met à jour la boule i avec : la carte, les autres boules, + (la boule et les billes, les billes). 
+							//on met à jour la boule i avec : la carte, les autres boules, + (la boule et les billes, les billes).
 					m_liste_temps_carte[i] = calculerTempsBille(m_liste_boules[i], d);
 					for (int k(0); k < m_N; ++k) { //boule i avec boule k ...
 						if (k == i)
@@ -219,23 +255,20 @@ label3:
 					//goto label3;
 					//cout << "label3" << endl;
 					//modifie = true;
-					compteur++;
+					*/
+					calculerTempsCarte(d);
+					//cout << "3" << endl;
+					++compteur;
 				}
-	cout << "compteur3 : " << compteur << endl;
-	if (modifie)
-		goto label;
 
 
-
-
-label2:
-	modifie = false;
-	compteur = 0;
+	//compteur = 0;
 	for (int i(1); i < m_N; ++i) //entre boule i et boule j :
 		for (int j(0); j < i; ++j)
-			if (m_liste_boules[i].distance(m_liste_boules[j]) < (m_liste_boules[i].m_r * 2 + d * 2)) //si  dans la zone de collision
-				if (m_liste_boules[i].calculerTempsBille(m_liste_boules[j], 0) > 0) {
+			if (m_liste_boules[i].enCollision(m_liste_boules[j],d)) {
+
 					m_liste_boules[i].collision(m_liste_boules[j]); //collision entre i et j;
+					/*
 					m_liste_temps_boules[i][j] = -1; //normalement elles ne se retouchent plus ...
 					m_liste_temps_boules[j][i] = -1;
 
@@ -265,23 +298,20 @@ label2:
 					//goto label2;
 					//cout << "label2" << endl;
 					//modifie = true;
-					compteur++;
+					*/
+					//cout << "2" << endl;
+					calculerTempsCarte(d);
+
+					++compteur;
 				}
-	cout << "compteur2 : " << compteur << endl;
-	if (modifie)
-		goto label;
 
 
-label1:
-	modifie = false;
-	compteur = 0;
-	//on commence par la collision de la carte avec une boule
+	//carte avec boule i
 	for (int i(0); i < m_N; ++i)
-		if (distance(m_liste_boules[i]) > (m_r - m_liste_boules[i].m_r) - d * 2) //si dans la distance de collision (d*2) : carte + boule
-			if (calculerTempsBille(m_liste_boules[i], 0) *
-				sqrt(v2(m_liste_boules[i])) < 3 * d) //si il y aura une collision !
+		if (enCollision(m_liste_boules[i],d)) //si il y aura une collision !
 			{
-				collision(m_liste_boules[i]); //on change les vitesses, puis on recalcule les temps
+				this->collision(m_liste_boules[i]); //on change les vitesses, puis on recalcule les temps
+				/*
 				for (int j(0); j < m_N; ++j) { //on calcule le temps pour la boule i avec les autres boules (j)
 					if (j == i)
 						continue;
@@ -296,18 +326,21 @@ label1:
 				//goto label1;
 				//cout << "label1" << endl;
 				//modifie = true;
-				compteur++;
+				*/
+				calculerTempsCarte(d);
+				//cout << "1" << endl;
+				++compteur;
 			}
-	cout << "compteur1 : " << compteur << endl;
-	if (modifie)
-		goto label;
 
+
+	cout << "compteur : " << compteur << endl;
 
 	return;
 }
 
 double Carte::tempsMin() {
-	double t = 0;
+	double t = 10;
+
 	for (int i(0); i < m_N; ++i)
 		if (m_liste_temps_carte[i] > 0)
 			t = m_liste_temps_carte[i]; //on prend une valeur de t >0, quelconque
@@ -336,17 +369,24 @@ double Carte::tempsMin() {
 }
 
 
-void Carte::iterer(double tempsMin, double tempsMax,double d) {
+void Carte::iterer(double tMin, double tMax,double d) {
 	double t = 0;
 	calculerTempsCarte(d);
+	int i = 0;
 
-	while(t < tempsMax) {
-		double deltaT = this->tempsMin();
-		avancerTempsCarte(deltaT);
-		if (t > tempsMin)
-			remplirHisto(deltaT);
+	while(t < tMax) {
+
 		calculCollision(d);
+		double deltaT = tempsMin();
+		avancerTempsCarte(deltaT);
+
+		if (t > tMin)
+			remplirHisto(deltaT);
+
 		t += deltaT;
+		if (t > i) {
+			++i;
+		}
 		cout << "temps cumule : " << t << endl;
 	}
 }
@@ -387,7 +427,7 @@ Carte::Carte(int n, int m, double temperature, double fraction, double rapport_m
 	for (int j(0); j < m_N; ++j)
 		m_liste_temps_boules.push_back(vector<double>(m_N));
 
-	cout << "allocation liste temps boules" << endl;
+	//cout << "allocation liste temps boules" << endl;
 
 
 	m_liste_temps_carte.resize(m_N);
@@ -395,7 +435,7 @@ Carte::Carte(int n, int m, double temperature, double fraction, double rapport_m
 
 	//TRandom essai();
 	m_liste_boules.reserve(sizeof(vector<int>) + m_N * (sizeof(int) + sizeof(Bille) + m_M * sizeof(Bille) + sizeof(vector<int>) * 3 + m_M * (sizeof(vector<int>) + m_M * sizeof(double)) + m_M * sizeof(double)));
-	cout << "resize liste boules" << endl;
+	//cout << "resize liste boules" << endl;
 
 	double a = rayon * 2 / sqrt(3);
 	int nCoord = ceil(pow(m_N, 1. / 3.));
@@ -405,9 +445,9 @@ Carte::Carte(int n, int m, double temperature, double fraction, double rapport_m
 
 	for (int i(0); i < m_N; ++i) {
 		Boule boule(temperature, fraction, rapport_masse, rayon_boule,&essai,m);
-		boule.m_x[0] = boule.m_x[0] - a / 2 + a / nCoord * (.5 + k[0]);
-		boule.m_x[1] = boule.m_x[1] - a / 2 + a / nCoord * (.5 + k[1]);
-		boule.m_x[2] = boule.m_x[2] - a / 2 + a / nCoord * (.5 + k[2]);
+		boule.m_x[0] +=  - a / 2 + a / nCoord * (.5 + k[0]);
+		boule.m_x[1] +=  - a / 2 + a / nCoord * (.5 + k[1]);
+		boule.m_x[2] +=  - a / 2 + a / nCoord * (.5 + k[2]);
 		for (int j(0); j < m_M; ++j) {
 			boule.m_liste_billes[j].m_x[0] += -a / 2 + a / nCoord * (.5 + k[0]);
 			boule.m_liste_billes[j].m_x[1] += -a / 2 + a / nCoord * (.5 + k[1]);
@@ -423,18 +463,14 @@ Carte::Carte(int n, int m, double temperature, double fraction, double rapport_m
 			}
 		}
 		m_liste_boules.push_back(boule);
-		cout << "ajouter Boule " << i << endl;
+		//cout << "ajouter Boule " << i << endl;
 	}
 
 	m_histo_Billes = new TH1D("billes", "energie interne", 150,  -3 *temperature, 3 * temperature);
 	m_histo_Boules = new TH1D("boules", "energie des boules", 150, -3 * temperature, 3 * temperature);
 
-	cout << "allouer histogrammes" << endl;
+	//cout << "allouer histogrammes" << endl;
 
-
-	masse_Carte = 1;
-	masse_Boule = 1 / rapport_masse;
-	masse_Bille = 1 / carre(rapport_masse);
 
 	double m_x[3] = {0.,0.,0.};
 	m_m = 1;
@@ -442,22 +478,22 @@ Carte::Carte(int n, int m, double temperature, double fraction, double rapport_m
 	m_r = rayon;
 
 	double impulsion[3] = { 0,0,0 };
-	cout << "avant calcul vitesse" << endl;
-	cout << "nombre de boules" << m_liste_boules.size() << endl;
+	//cout << "avant calcul vitesse" << endl;
+	//cout << "nombre de boules" << m_liste_boules.size() << endl;
 
 	for (int i(0); i < m_N; ++i) {
 		impulsion[0] += m_liste_boules[i].m_v[0] * (masse_Boule);
 		impulsion[1] += m_liste_boules[i].m_v[1] * (masse_Boule);
 		impulsion[2] += m_liste_boules[i].m_v[2] * (masse_Boule);
-		cout << "vitesse boule " <<i<< endl;
-		cout << "taille liste " << m_liste_boules[i].m_liste_billes.size() << endl;
+		//cout << "vitesse boule " <<i<< endl;
+		//cout << "taille liste " << m_liste_boules[i].m_liste_billes.size() << endl;
 		for (int j(0); j < m_M; ++j) {
 			impulsion[0] += m_liste_boules[i].m_liste_billes[j].m_v[0] * (masse_Bille);
 			impulsion[1] += m_liste_boules[i].m_liste_billes[j].m_v[1] * (masse_Bille);
 			impulsion[2] += m_liste_boules[i].m_liste_billes[j].m_v[2] * (masse_Bille);
 		}
 	}
-	cout << "calcul vitesse fin" << endl;
+	//cout << "calcul vitesse fin" << endl;
 
 	for (int k(0); k < 3; ++k) {
 		m_v[k] = - impulsion[k];
@@ -486,7 +522,7 @@ Boule::Boule(double temperature, double fraction, double rapport_masse, double r
 	double a = 2 * rayon_boule / sqrt(3);
 
 	int k[3] = { 0,0,0 };
-	cout << "allocation boule ..." << endl;
+	//cout << "allocation boule ..." << endl;
 
 	for (int i(0); i < m_M; ++i) {
 		Bille bille;
@@ -508,11 +544,11 @@ Boule::Boule(double temperature, double fraction, double rapport_masse, double r
 			}
 		}
 
-		bille.m_r = (a / nCoord) * sqrt(3) / 2 / fraction;
+		bille.m_r = (a / nCoord) * sqrt(3) /( 2 * fraction);
 		bille.m_type = 2;
 		bille.m_m = 1 / carre(rapport_masse);
 		m_liste_billes.push_back(bille);
-		cout << "bille : " << i << endl;
+		//cout << "bille : " << i << endl;
 	}
 
 	double d_vitesse[3] = { 0,0,0 };
@@ -543,5 +579,23 @@ Bille::Bille() {
 Carte::~Carte() {
 	delete m_histo_Billes;
 	delete m_histo_Boules;
+
+}
+
+double Carte::energie() {
+
+	double somme = 0;
+	somme += (carre(m_v[0]) + carre(m_v[1]) + carre(m_v[2])) * masse_Carte;
+	for (int i(0); i < m_N; ++i) {
+		somme += masse_Boule * (carre(m_liste_boules[i].m_v[0]) + carre(m_liste_boules[i].m_v[1]) + carre(m_liste_boules[i].m_v[2]));
+	}
+	for (int i(0); i < m_N; ++i) {
+		for (int j(0); j < m_M; ++j) {
+			somme += masse_Bille * (carre(m_liste_boules[i].m_liste_billes[j].m_v[0]) +
+				carre(m_liste_boules[i].m_liste_billes[j].m_v[1]) +
+				carre(m_liste_boules[i].m_liste_billes[j].m_v[2]));
+		}
+	}
+	return somme;
 
 }

@@ -1,4 +1,6 @@
 #pragma once
+#include <TApplication.h>
+
 #include <vector>
 #include <TH1D.h>
 #include <TRandom.h>
@@ -23,6 +25,7 @@ public:
 	void avancerTempsBille(double temps); //x + v*t
 	double distance(Bille& autre);
 	double v2(Bille& autre);
+	bool enCollision(Bille& autre,double d);
 	Bille(); //générer la température gaussienne, la  position quelconque
 };
 
@@ -67,6 +70,8 @@ public:
 	void iterer(double tempsMin, double tempsMax,double d);
 	double tempsMin();
 	void remplirHisto(double t);
+
+	double energie();
 
 	Carte(int n,int m,double temperature,double fraction, double rapport_masse,double rayon); //remplir n boules de n billes, avec une température ! fraction du volume occupé
 	Carte();
