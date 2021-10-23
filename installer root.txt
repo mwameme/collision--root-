@@ -1,0 +1,7 @@
+https://root.cern/install/all_releases/ installer ça : le fichier release (et non debug). Mettre n'importe où sur le disque dur
+
+lancer le fichier root/bin/thisroot.bat (pour que windows trouve les librairies, lors de l'exécution du programme)
+
+lancer le collision.exe
+
+Mettre au moins 1.7 pour le rapport des tailles des boules/billes. Un jeu de parametre est proposé dans l'image  "exemple parametres.jpeg"

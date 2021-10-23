@@ -73,7 +73,7 @@ public:
 
 	double energie();
 
-	Carte(int n,int m,double temperature,double fraction, double rapport_masse,double rayon); //remplir n boules de n billes, avec une température ! fraction du volume occupé
+	Carte(int n,int m,double temperature,double fraction, double rapport_masse,double rayon,double binBoule,double binBille); //remplir n boules de n billes, avec une température ! fraction du volume occupé
 	Carte();
 	~Carte();
 };
